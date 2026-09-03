@@ -14,6 +14,41 @@ This challenge app now exposes several capability surfaces:
 - A human-approved source proposal flow that becomes a backend job only after the page owner approves it.
 - Five native Agent Registry tools implemented in this challenge app.
 
+## What existed before this hackathon, and what did not
+
+Konect4AI is a pre-existing product. Per the Challenge rules, this section
+separates prior work from what was built for WebMCP during the submission period.
+
+### Pre-existing (not built for this hackathon)
+
+The Konect4AI backend, unchanged in architecture:
+
+- The extraction engine that turns a URL into a structured API
+- `POST /api/v1/scraping/requests`, `GET /generated/{id}`, job status and quota
+- The backend MCP server at `POST /mcp/{licenseKey}`
+- The BYOK question-answering path at `POST /api/byok/ask`
+- Authentication, licensing, and the robots.txt compliance check
+
+### Built during the submission period
+
+**Everything in this repository.** The challenge app is new: every file here was
+written for the WebMCP Challenge. Specifically:
+
+| Added for WebMCP | What it is |
+| --- | --- |
+| `src/lib/webmcp/register-tools.ts` | The WebMCP bridge: registration, the `CallToolResult` contract, `AbortSignal` threading, and the return boundary that strips rows before they reach the agent |
+| `propose_data_source` + approval flow | An agent can propose a source; only the page owner can create one |
+| `ask_data_source` + provenance receipt | Questions answered by the owner's model; the tool returns the answer, not the dataset |
+| Per-source `ASK-ONLY` / `DIRECT` mode | The page owner decides, per source, whether an agent may fetch directly |
+| Human ask row | People and agents invoke the same tool in the same workspace |
+| `src/lib/a2a/*`, `/a2a`, `/.well-known/agent-card.json` | Minimal A2A v1.0 adapter over the same capability registry |
+| Live Agent Workspace | The visible split, invocation history, and approval banner |
+| `scripts/acceptance.sh` | 18 checks against the live deployment |
+
+One backend addition was made during the submission period to support this app: a
+`json_track` extraction mode, so JSON APIs could become capabilities. It is noted
+here rather than presented as pre-existing.
+
 ## Why WebMCP?
 
 Backend MCP is useful, but it is mostly:
