@@ -1714,12 +1714,50 @@ export default function WebMcpWorkspace() {
     <main className="page-shell">
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">{copy.heroEyebrow}</p>
           <h1>{copy.heroTitle}</h1>
-          <p className="subtitle">{copy.heroSubtitle}</p>
           <p className="workspace-tagline">{copy.workspaceTagline}</p>
         </div>
         <div className="hero-controls">
+          <section className="status-bar" aria-label={copy.connectionStatusLabel}>
+            <span
+              className={`status-pill ${
+                webMcpState === "available"
+                  ? "ok"
+                  : webMcpState === "unavailable"
+                    ? "error"
+                    : ""
+              }`}
+            >
+              <span className="status-dot" />
+              {copy.webMcpLabel}{" "}
+              {webMcpState === "checking"
+                ? copy.checkingLabel
+                : webMcpState === "available"
+                  ? copy.availableLabel
+                  : copy.unavailableMessage}
+            </span>
+            <span
+              className={`status-pill ${
+                backendState === "connected"
+                  ? "ok"
+                  : backendState === "error"
+                    ? "error"
+                    : ""
+              }`}
+            >
+              <span className="status-dot" />
+              {copy.backendLabel}{" "}
+              {backendState === "checking"
+                ? copy.checkingLabel
+                : backendState === "connected"
+                  ? copy.connectedLabel
+                  : copy.errorLabel || "error"}
+            </span>
+            <span className="status-pill">
+              <span className="status-dot" />
+              {registeredCount} {copy.agentToolsRegisteredLabel}
+            </span>
+          </section>
           <label className="ui-select-label">
             {copy.uiLanguageLabel}
             <select
@@ -1740,49 +1778,8 @@ export default function WebMcpWorkspace() {
         <p className="notice">{copy.unavailableMessage}</p>
       )}
 
-      <section className="status-bar" aria-label={copy.connectionStatusLabel}>
-        <span
-          className={`status-pill ${
-            webMcpState === "available"
-              ? "ok"
-              : webMcpState === "unavailable"
-                ? "error"
-                : ""
-          }`}
-        >
-          <span className="status-dot" />
-          {copy.webMcpLabel}{" "}
-          {webMcpState === "checking"
-            ? copy.checkingLabel
-            : webMcpState === "available"
-              ? copy.availableLabel
-              : copy.unavailableMessage}
-        </span>
-        <span
-          className={`status-pill ${
-            backendState === "connected"
-              ? "ok"
-              : backendState === "error"
-                ? "error"
-                : ""
-          }`}
-        >
-          <span className="status-dot" />
-          {copy.backendLabel}{" "}
-          {backendState === "checking"
-            ? copy.checkingLabel
-            : backendState === "connected"
-              ? copy.connectedLabel
-              : copy.errorLabel || "error"}
-        </span>
-        <span className="status-pill">
-          <span className="status-dot" />
-          {registeredCount} {copy.agentToolsRegisteredLabel}
-        </span>
-      </section>
-
       <section className="workspace-grid">
-        <aside className="panel">
+        <aside className="panel agent-panel">
           <div className="panel-header">
             <h2 className="panel-title">{copy.builtInAgents}</h2>
             <button className="btn" onClick={loadCapabilities} type="button">
@@ -1809,11 +1806,11 @@ export default function WebMcpWorkspace() {
             </div>
             <div className="agent-list">
               {visibleAgentDefinitions.map((agent) => (
-                <button
-                  key={agent.id}
-                  className={`capability ${
-                    selectedAgentId === agent.id ? "selected" : ""
-                  }`}
+                  <button
+                    key={agent.id}
+                    className={`capability agent-card ${
+                      selectedAgentId === agent.id ? "selected" : ""
+                    }`}
                   onClick={() => {
                     setSelectedAgentId(agent.id);
                     setManualMode("agent");
@@ -1842,7 +1839,7 @@ export default function WebMcpWorkspace() {
                 {sourceCapabilityTools.map((tool) => (
                   <button
                     key={tool.name}
-                    className={`capability ${
+                    className={`capability source-capability-card ${
                       tool.name === selectedCapability ? "selected" : ""
                     }`}
                     onClick={() => {
@@ -1913,7 +1910,7 @@ export default function WebMcpWorkspace() {
           </div>
         </aside>
 
-        <section className="panel">
+        <section className="panel workspace-panel">
           <div className="panel-header">
             <h2 className="panel-title">{copy.liveWorkspace}</h2>
           </div>
