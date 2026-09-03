@@ -53,6 +53,7 @@ export interface WorkspaceCopy {
   sentIdleTitle: string;
   sentIdleMessage: string;
   boundaryIdleMessage: string;
+  proposalBoundaryIdleMessage: string;
   sentToAgentHeading: string;
   boundaryHeading: string;
   boundaryNote: string;
@@ -180,6 +181,8 @@ const EN: WorkspaceCopy = {
     "Ask a question below, or let an agent call ask_data_source.",
   boundaryIdleMessage:
     "When a question is answered, the rows behind that answer appear here — and stay here.",
+  proposalBoundaryIdleMessage:
+    "Nothing was read. This tool only proposes — the source was created after your approval.",
   sentToAgentHeading: "SENT TO AGENT",
   boundaryHeading: "NOT RETURNED THROUGH WEBMCP",
   boundaryNote: "This is the tool's return boundary, not browser-level isolation.",
@@ -331,6 +334,8 @@ const ZH: WorkspaceCopy = {
   sentIdleMessage: "請在下方提問，或讓代理呼叫 ask_data_source。",
   boundaryIdleMessage:
     "當問題得到回答時，該答案背後的資料列會出現在這裡，而且會保留在這裡。",
+  proposalBoundaryIdleMessage:
+    "沒有讀取任何內容。這個工具只會提出提案，來源會在你核准後建立。",
   sentToAgentHeading: "傳給 agent",
   boundaryHeading: "未透過 WebMCP 傳回",
   boundaryNote: "這是工具的回傳邊界，不是瀏覽器層級的隔離。",

@@ -1707,6 +1707,13 @@ export default function WebMcpWorkspace() {
   const hasBoundaryData = currentBoundaryRows.length > 0;
   const currentBoundaryRowCount =
     currentBoundary?.recordsConsulted ?? currentBoundaryRows.length;
+  const currentBoundaryModelText =
+    currentInvocation?.toolName === PROPOSE_DATA_SOURCE_TOOL_NAME &&
+    (currentInvocation.status === "waiting" ||
+      currentInvocation.status === "running" ||
+      currentInvocation.status === "planning")
+      ? copy.awaitingOwnerApprovalLabel
+      : currentReceipt?.modelBoundary || copy.unverifiedLabel;
   const currentBoundaryTable = useMemo(
     () => buildRawRowsTableData(currentBoundaryRows),
     [currentBoundaryRows],
@@ -2051,10 +2058,14 @@ export default function WebMcpWorkspace() {
                         ? currentInvocation.status === "error"
                           ? currentInvocation.error ||
                             extractAnswerText(currentInvocation.result) ||
-                            copy.waitingForBackendLabel
-                          : extractAnswerText(currentInvocation.result) ||
-                            currentInvocation.error ||
-                            copy.waitingForBackendLabel
+                            copy.proposalRejectedNoBackendLabel
+                          : currentInvocation.status === "waiting"
+                            ? copy.proposalSubmittedLabel
+                            : currentInvocation.status === "running"
+                              ? copy.approvedCreatingSourceLabel
+                              : extractAnswerText(currentInvocation.result) ||
+                                currentInvocation.error ||
+                                copy.proposalSubmittedLabel
                         : currentInvocation.status === "running" ||
                             currentInvocation.status === "planning" ||
                             currentInvocation.status === "waiting"
@@ -2093,7 +2104,7 @@ export default function WebMcpWorkspace() {
                       <div className="kv-row">
                         <strong>{modelBoundaryLabel}</strong>
                         <span>
-                          {currentReceipt?.modelBoundary || copy.unverifiedLabel}
+                          {currentBoundaryModelText}
                         </span>
                       </div>
                       <div className="kv-row">
@@ -2221,7 +2232,12 @@ export default function WebMcpWorkspace() {
                   </>
                 ) : (
                   <div className="empty-state boundary-empty-state">
-                    <p className="empty-state-copy">{copy.boundaryIdleMessage}</p>
+                    <p className="empty-state-copy">
+                      {currentInvocation?.toolName ===
+                      PROPOSE_DATA_SOURCE_TOOL_NAME
+                        ? copy.proposalBoundaryIdleMessage
+                        : copy.boundaryIdleMessage}
+                    </p>
                   </div>
                 )}
               </div>

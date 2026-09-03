@@ -1,4 +1,7 @@
 :root {
+  --font-display: "Bricolage Grotesque";
+  --font-sans: "Instrument Sans";
+  --font-mono: "IBM Plex Mono";
   --ground: #0b1017;
   --surface: #141b24;
   --surface-2: #1b242e;

@@ -214,7 +214,7 @@ export async function registerKonect4aiTools(
                 const message =
                   typeof value.message === "string"
                     ? value.message
-                    : "提案已送出，等待頁面擁有者核准";
+                    : "Proposal submitted. Waiting for the page owner to approve.";
                 return wrapTextResult(message, { message });
               }
               return wrapToolResult(rawResult);

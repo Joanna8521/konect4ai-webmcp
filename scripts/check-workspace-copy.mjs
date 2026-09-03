@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const filePath = resolve("src/components/WebMcpWorkspace.tsx");
-const source = readFileSync(filePath, "utf8");
+const files = [
+  resolve("src/components/WebMcpWorkspace.tsx"),
+  resolve("src/lib/webmcp/register-tools.ts"),
+];
 
 const banned = [
   "UI language",
@@ -38,21 +40,31 @@ const allowedBoundaryMarkers = [
   "NOT RETURNED THROUGH WEBMCP",
 ];
 
-const findings = banned.filter((literal) => source.includes(literal));
+let hadFindings = false;
 
-if (findings.length > 0) {
-  console.error("Hardcoded UI copy found in WebMcpWorkspace.tsx:");
-  for (const literal of findings) {
-    console.error(`- ${literal}`);
+for (const filePath of files) {
+  const source = readFileSync(filePath, "utf8");
+  const findings = banned.filter((literal) => source.includes(literal));
+
+  if (findings.length > 0) {
+    hadFindings = true;
+    console.error(`Hardcoded UI copy found in ${filePath}:`);
+    for (const literal of findings) {
+      console.error(`- ${literal}`);
+    }
   }
-  process.exit(1);
 }
 
+const workspaceSource = readFileSync(files[0], "utf8");
 for (const literal of allowedBoundaryMarkers) {
-  if (!source.includes(literal)) {
+  if (!workspaceSource.includes(literal)) {
     console.error(`Expected boundary marker missing: ${literal}`);
     process.exit(1);
   }
+}
+
+if (hadFindings) {
+  process.exit(1);
 }
 
 console.log("Workspace copy scan passed.");
