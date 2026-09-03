@@ -142,11 +142,20 @@ interface AgentManualState {
 }
 
 function nowStamp(): string {
-  return new Date().toLocaleString(undefined, {
+  return new Date().toISOString();
+}
+
+function formatTimestamp(stamp: string, locale: "en-US" | "zh-TW"): string {
+  const date = new Date(stamp);
+  if (Number.isNaN(date.getTime())) {
+    return stamp;
+  }
+
+  return new Intl.DateTimeFormat(locale, {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-  });
+  }).format(date);
 }
 
 function newInvocationId(): string {
@@ -629,6 +638,7 @@ export default function WebMcpWorkspace() {
     () => resolveWorkspaceLanguage(uiLanguage),
     [uiLanguage],
   );
+  const displayLocale = resolvedUiLanguage === "zh-TW" ? "zh-TW" : "en-US";
 
   const sourceCapabilityTools = useMemo(
     () =>
@@ -1927,7 +1937,7 @@ export default function WebMcpWorkspace() {
                     <span>
                       {sourceProposalLabel}: {activeProposal.proposedBy}
                     </span>
-                    <span>{activeProposal.createdAt}</span>
+                    <span>{formatTimestamp(activeProposal.createdAt, displayLocale)}</span>
                   </div>
                   {activeProposal.message && (
                     <p className="proposal-banner-message">
@@ -2007,11 +2017,15 @@ export default function WebMcpWorkspace() {
                       </div>
                       <div className="kv-row">
                         <strong>{copy.startedLabel}</strong>
-                        <span>{currentInvocation.startedAt}</span>
+                        <span>{formatTimestamp(currentInvocation.startedAt, displayLocale)}</span>
                       </div>
                       <div className="kv-row">
                         <strong>{copy.completedLabel}</strong>
-                        <span>{currentInvocation.completedAt || "..."}</span>
+                        <span>
+                          {currentInvocation.completedAt
+                            ? formatTimestamp(currentInvocation.completedAt, displayLocale)
+                            : "..."}
+                        </span>
                       </div>
                     </div>
                     <p className="run-label">{copy.argumentsLabel}</p>
@@ -2088,7 +2102,10 @@ export default function WebMcpWorkspace() {
                             ? verifiedLabel
                             : unverifiedLabel}
                           {currentReceipt?.extractedAt
-                            ? ` · ${currentReceipt.extractedAt}`
+                            ? ` · ${formatTimestamp(
+                                currentReceipt.extractedAt,
+                                displayLocale,
+                              )}`
                             : ""}
                         </span>
                       </div>
@@ -2287,7 +2304,7 @@ export default function WebMcpWorkspace() {
                               {sourceProposalLabel}: {proposal.proposedBy}
                             </div>
                             <div className="capability-desc">
-                              {proposal.createdAt}
+                              {formatTimestamp(proposal.createdAt, displayLocale)}
                               {proposal.toolRefreshDelayMs
                                 ? ` · ${proposal.toolRefreshDelayMs}ms`
                                 : ""}
@@ -2622,8 +2639,10 @@ export default function WebMcpWorkspace() {
                         </span>
                       </div>
                       <div className="capability-desc">
-                        {item.source} · {item.startedAt}
-                        {item.completedAt ? ` → ${item.completedAt}` : ""}
+                        {item.source} · {formatTimestamp(item.startedAt, displayLocale)}
+                        {item.completedAt
+                          ? ` → ${formatTimestamp(item.completedAt, displayLocale)}`
+                          : ""}
                       </div>
                       <div className="capability-desc">
                         {item.provenanceReceipt?.sourceName || copy.unverifiedLabel} ·{" "}

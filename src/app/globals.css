@@ -651,6 +651,12 @@ h3 {
   border-color: rgba(224, 163, 60, 0.34);
 }
 
+.boundary-card .raw-rows-table-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
 .run-label {
   margin: 0 0 6px;
   color: var(--text-muted);
@@ -761,12 +767,33 @@ h3 {
 
 .raw-rows-table-shell {
   width: 100%;
-  max-height: 240px;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
   overflow-x: auto;
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #0d141c;
+  background: var(--surface-2);
+  scrollbar-color: var(--border) transparent;
+}
+
+.raw-rows-table-shell::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.raw-rows-table-shell::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.raw-rows-table-shell::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.raw-rows-table-shell::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .raw-rows-table {
