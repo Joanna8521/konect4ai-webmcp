@@ -150,7 +150,10 @@ async function fetchScrapingJobs(
   apiBase: string,
   userToken: string,
 ): Promise<ScrapingJob[]> {
-  const response = await fetch(`${apiBase}/api/v1/scraping/jobs`, {
+  // The jobs endpoint pages at 10 by default. Without an explicit limit the
+  // oldest sources fall off the first page and their tools resolve to no jobId,
+  // so ask_data_source rejects them as unknown.
+  const response = await fetch(`${apiBase}/api/v1/scraping/jobs?limit=100`, {
     method: "GET",
     headers: {
       Accept: "application/json",
