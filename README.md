@@ -227,7 +227,24 @@ Use a WebMCP-capable browser or ChatGPT Desktop to test browser-agent discovery.
 ```bash
 npm run typecheck
 npm run build
+npm run check:workspace-copy
 ```
+
+### Acceptance script
+
+`scripts/acceptance.sh` runs 18 checks against a live deployment: reachability,
+capability discovery, jobId resolution, the ask boundary and its provenance
+receipt, A2A Agent Card / SendMessage / GetTask, and a scan confirming no
+credential appears in any public response.
+
+```bash
+bash scripts/acceptance.sh
+BASE_URL=http://localhost:3000 bash scripts/acceptance.sh
+```
+
+It asserts the boundary directly: the page receives the underlying rows, the
+receipt reports `rawRowsReturnedThroughWebMCP: false`, and an unknown jobId is
+rejected with the list of sources that are actually available.
 
 Manual checks:
 

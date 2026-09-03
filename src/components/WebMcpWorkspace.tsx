@@ -611,6 +611,7 @@ export default function WebMcpWorkspace() {
   const [humanAskQuestion, setHumanAskQuestion] = useState("");
   const [humanAskLoading, setHumanAskLoading] = useState(false);
   const [humanAskError, setHumanAskError] = useState("");
+  const [manualWorkbenchOpen, setManualWorkbenchOpen] = useState(false);
   const [manualArgs, setManualArgs] = useState(
     '{\n  "query": "electric vehicle charging",\n  "limit": 5\n}',
   );
@@ -2251,66 +2252,80 @@ export default function WebMcpWorkspace() {
             {humanAskError && <p className="error-text">{humanAskError}</p>}
 
             <div className="manual-workbench">
-              {proposals.length > 0 && (
-                <>
-                  <p className="run-label" style={{ marginTop: 18 }}>
-                    {proposalsHeading}
-                  </p>
-                  <div className="proposal-list">
-                    {proposals.map((proposal) => (
-                      <div key={proposal.id} className="proposal-card">
-                        <div className="proposal-top">
-                          <span className="proposal-url">{proposal.url}</span>
-                          <span className={`history-status ${proposal.status}`}>
-                            {proposal.status}
-                          </span>
-                        </div>
-                        <p className="capability-desc">{proposal.description}</p>
-                        <div className="capability-desc">
-                          {sourceProposalLabel}: {proposal.proposedBy}
-                        </div>
-                        <div className="capability-desc">
-                          {proposal.createdAt}
-                          {proposal.toolRefreshDelayMs
-                            ? ` · ${proposal.toolRefreshDelayMs}ms`
-                            : ""}
-                        </div>
-                        {proposal.message && (
-                          <div className="capability-desc">{proposal.message}</div>
-                        )}
-                        {proposal.error && (
-                          <div className="error-text">{proposal.error}</div>
-                        )}
-                        {proposal.status === "pending" ||
-                        proposal.status === "approving" ? (
-                          <div className="actions" style={{ marginTop: 8 }}>
-                            <button
-                              className="btn primary"
-                              type="button"
-                              onClick={() => void approveProposal(proposal.id)}
-                              disabled={proposal.status === "approving"}
-                            >
-                              {approveLabel}
-                            </button>
-                            <button
-                              className="btn"
-                              type="button"
-                              onClick={() => rejectProposal(proposal.id)}
-                            >
-                              {rejectLabel}
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
+              <button
+                className="manual-workbench-toggle"
+                type="button"
+                onClick={() => setManualWorkbenchOpen((current) => !current)}
+                aria-expanded={manualWorkbenchOpen}
+              >
+                <span>{copy.manualInvocation}</span>
+                <span className="manual-workbench-toggle-icon">
+                  {manualWorkbenchOpen ? "▴" : "▾"}
+                </span>
+              </button>
 
-              <p className="run-label" style={{ marginTop: 18 }}>
-                {copy.manualInvocation}
-              </p>
-              <div className="manual-form">
+              {manualWorkbenchOpen && (
+                <div className="manual-workbench-content">
+                  {proposals.length > 0 && (
+                    <>
+                      <p className="run-label" style={{ marginTop: 18 }}>
+                        {proposalsHeading}
+                      </p>
+                      <div className="proposal-list">
+                        {proposals.map((proposal) => (
+                          <div key={proposal.id} className="proposal-card">
+                            <div className="proposal-top">
+                              <span className="proposal-url">{proposal.url}</span>
+                              <span className={`history-status ${proposal.status}`}>
+                                {proposal.status}
+                              </span>
+                            </div>
+                            <p className="capability-desc">{proposal.description}</p>
+                            <div className="capability-desc">
+                              {sourceProposalLabel}: {proposal.proposedBy}
+                            </div>
+                            <div className="capability-desc">
+                              {proposal.createdAt}
+                              {proposal.toolRefreshDelayMs
+                                ? ` · ${proposal.toolRefreshDelayMs}ms`
+                                : ""}
+                            </div>
+                            {proposal.message && (
+                              <div className="capability-desc">{proposal.message}</div>
+                            )}
+                            {proposal.error && (
+                              <div className="error-text">{proposal.error}</div>
+                            )}
+                            {proposal.status === "pending" ||
+                            proposal.status === "approving" ? (
+                              <div className="actions" style={{ marginTop: 8 }}>
+                                <button
+                                  className="btn primary"
+                                  type="button"
+                                  onClick={() => void approveProposal(proposal.id)}
+                                  disabled={proposal.status === "approving"}
+                                >
+                                  {approveLabel}
+                                </button>
+                                <button
+                                  className="btn"
+                                  type="button"
+                                  onClick={() => rejectProposal(proposal.id)}
+                                >
+                                  {rejectLabel}
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  <p className="run-label" style={{ marginTop: 18 }}>
+                    {copy.manualInvocation}
+                  </p>
+                  <div className="manual-form">
                 <label>
                   {copy.invocationModeLabel}
                   <select
@@ -2585,7 +2600,9 @@ export default function WebMcpWorkspace() {
                     </pre>
                   </>
                 )}
-              </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="run-card history-card">

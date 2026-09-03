@@ -160,7 +160,7 @@ h3 {
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
 }
@@ -176,7 +176,9 @@ h3 {
 }
 
 .agent-panel {
-  border-color: rgba(63, 176, 173, 0.3);
+  border-color: rgba(63, 176, 173, 0.18);
+  color: var(--text-muted);
+  background: rgba(20, 27, 36, 0.92);
 }
 
 .workspace-panel {
@@ -347,14 +349,14 @@ h3 {
   padding: 11px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--surface-2);
+  background: rgba(18, 24, 32, 0.98);
   color: inherit;
   text-align: left;
   overflow: hidden;
 }
 
 .agent-card {
-  background: var(--surface);
+  background: rgba(16, 22, 30, 0.96);
 }
 
 .agent-card.selected {
@@ -365,7 +367,7 @@ h3 {
 }
 
 .source-capability-card {
-  background: #10161f;
+  background: #0f141b;
 }
 
 .capability-head {
@@ -537,6 +539,7 @@ h3 {
   gap: 12px;
   position: relative;
   align-items: stretch;
+  min-height: 55vh;
 }
 
 .live-grid > .run-card {
@@ -562,8 +565,8 @@ h3 {
 }
 
 .run-card {
-  min-height: 420px;
-  padding: 14px;
+  min-height: 55vh;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface-2);
@@ -573,12 +576,12 @@ h3 {
 
 .sent-card {
   background: linear-gradient(180deg, rgba(15, 49, 47, 0.82), rgba(15, 49, 47, 0.92));
-  border-color: rgba(63, 176, 173, 0.28);
+  border-color: rgba(63, 176, 173, 0.34);
 }
 
 .boundary-card {
   background: linear-gradient(180deg, rgba(46, 36, 18, 0.86), rgba(46, 36, 18, 0.94));
-  border-color: rgba(224, 163, 60, 0.28);
+  border-color: rgba(224, 163, 60, 0.34);
 }
 
 .run-label {
@@ -858,6 +861,39 @@ h3 {
   gap: 10px;
 }
 
+.manual-workbench {
+  margin-top: 14px;
+}
+
+.manual-workbench-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(16, 22, 30, 0.96);
+  color: var(--text-muted);
+  font-family: var(--font-mono), "SFMono-Regular", Consolas,
+    "Liberation Mono", Menlo, ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.manual-workbench-toggle-icon {
+  color: var(--text-muted);
+}
+
+.manual-workbench-content {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(36, 48, 64, 0.7);
+}
+
 .manual-form label {
   display: grid;
   gap: 6px;
@@ -1007,6 +1043,11 @@ textarea {
   .workspace-grid,
   .live-grid {
     grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .run-card {
+    min-height: 420px;
   }
 
   .human-ask-bar {
