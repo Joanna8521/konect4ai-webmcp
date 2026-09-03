@@ -34,8 +34,12 @@ writeFileSync(
     "main().catch((error) => {",
     "  console.error(error);",
     "  process.exit(1);",
-    "});",
-    "",
-  ].join("\n"),
+  "});",
+  "",
+].join("\n"),
   "utf8",
 );
+
+const hostingMetadataPath = resolve("dist/.openai/hosting.json");
+mkdirSync(dirname(hostingMetadataPath), { recursive: true });
+writeFileSync(hostingMetadataPath, JSON.stringify({ static: null }, null, 2), "utf8");
