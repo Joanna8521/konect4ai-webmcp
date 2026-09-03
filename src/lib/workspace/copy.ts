@@ -50,6 +50,9 @@ export interface WorkspaceCopy {
   sourceModeAskOnlyHelp: string;
   sourceModeDirectHelp: string;
   noToolCallMessage: string;
+  sentIdleTitle: string;
+  sentIdleMessage: string;
+  boundaryIdleMessage: string;
   sentToAgentHeading: string;
   boundaryHeading: string;
   boundaryNote: string;
@@ -172,6 +175,11 @@ const EN: WorkspaceCopy = {
   sourceModeDirectHelp: "Agent can fetch the full dataset directly.",
   noToolCallMessage:
     "No tool call yet. Invoke ask_data_source to see what crosses the boundary.",
+  sentIdleTitle: "Nothing sent yet",
+  sentIdleMessage:
+    "Ask a question below, or let an agent call ask_data_source.",
+  boundaryIdleMessage:
+    "When a question is answered, the rows behind that answer appear here — and stay here.",
   sentToAgentHeading: "SENT TO AGENT",
   boundaryHeading: "NOT RETURNED THROUGH WEBMCP",
   boundaryNote: "This is the tool's return boundary, not browser-level isolation.",
@@ -318,6 +326,10 @@ const ZH: WorkspaceCopy = {
   sourceModeAskOnlyHelp: "代理可以提問，但不能直接抓取資料集。",
   sourceModeDirectHelp: "代理可以直接抓取完整資料集。",
   noToolCallMessage: "尚未執行工具呼叫。請呼叫 ask_data_source 以查看邊界外的內容。",
+  sentIdleTitle: "尚未傳送任何內容",
+  sentIdleMessage: "請在下方提問，或讓代理呼叫 ask_data_source。",
+  boundaryIdleMessage:
+    "當問題得到回答時，該答案背後的資料列會出現在這裡，而且會保留在這裡。",
   sentToAgentHeading: "傳給 agent",
   boundaryHeading: "未透過 WebMCP 傳回",
   boundaryNote: "這是工具的回傳邊界，不是瀏覽器層級的隔離。",

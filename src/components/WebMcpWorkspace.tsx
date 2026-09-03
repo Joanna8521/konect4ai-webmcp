@@ -1681,7 +1681,6 @@ export default function WebMcpWorkspace() {
   const boundaryHeading =
     "NOT RETURNED THROUGH WEBMCP";
   const sentToAgentHeading = "SENT TO AGENT";
-  const noToolCallMessage = copy.noToolCallMessage;
   const boundaryNote = copy.boundaryNote;
   const proposalsHeading = copy.proposalsHeading;
   const approveLabel = copy.approveLabel;
@@ -1806,7 +1805,7 @@ export default function WebMcpWorkspace() {
               </span>
             </div>
             <div className="agent-list">
-              {visibleAgentDefinitions.map((agent) => (
+                {visibleAgentDefinitions.map((agent) => (
                   <button
                     key={agent.id}
                     className={`capability agent-card ${
@@ -1962,7 +1961,8 @@ export default function WebMcpWorkspace() {
               <div className="run-card sent-card">
                 {!currentInvocation ? (
                   <div className="empty-state">
-                    <p>{copy.idleMessage}</p>
+                    <p className="empty-state-title">{copy.sentIdleTitle}</p>
+                    <p className="empty-state-copy">{copy.sentIdleMessage}</p>
                   </div>
                 ) : (
                   <>
@@ -2195,7 +2195,9 @@ export default function WebMcpWorkspace() {
                     </div>
                   </>
                 ) : (
-                  <p className="boundary-empty">{noToolCallMessage}</p>
+                  <div className="empty-state boundary-empty-state">
+                    <p className="empty-state-copy">{copy.boundaryIdleMessage}</p>
+                  </div>
                 )}
               </div>
             </div>

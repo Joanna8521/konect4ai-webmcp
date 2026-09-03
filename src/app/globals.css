@@ -346,7 +346,7 @@ h3 {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  padding: 11px;
+  padding: 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: rgba(18, 24, 32, 0.98);
@@ -368,6 +368,54 @@ h3 {
 
 .source-capability-card {
   background: #0f141b;
+}
+
+.source-capability-card .capability-head {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.source-capability-card .capability-head-copy {
+  width: 100%;
+  min-width: 0;
+}
+
+.source-capability-card .capability-name {
+  font-size: 12px;
+  min-width: 0;
+}
+
+.source-capability-card .capability-tech-name {
+  font-size: 9px;
+  min-width: 0;
+}
+
+.source-capability-card .mode-segmented {
+  width: 100%;
+  min-width: 0;
+}
+
+.source-capability-card .mode-segment {
+  font-size: 10px;
+  padding: 6px 8px;
+}
+
+.source-capability-card .mode-help {
+  font-size: 9px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+}
+
+.source-capability-card .capability-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+}
+
+.source-capability-card .mode-segmented,
+.source-capability-card .mode-segment {
+  min-width: 0;
 }
 
 .capability-head {
@@ -533,6 +581,25 @@ h3 {
   text-align: center;
 }
 
+.empty-state-title {
+  margin: 0;
+  color: var(--text-muted);
+  font-family: var(--font-display), var(--font-sans), Inter, ui-sans-serif,
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.empty-state-copy {
+  margin: 0;
+  max-width: 34ch;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
 .live-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -685,6 +752,11 @@ h3 {
   font-size: 13px;
   line-height: 1.6;
   overflow-wrap: anywhere;
+}
+
+.boundary-empty-state {
+  min-height: 220px;
+  padding: 20px;
 }
 
 .raw-rows-table-shell {
