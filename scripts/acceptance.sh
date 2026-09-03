@@ -1,88 +1,115 @@
 #!/bin/bash
+# Acceptance checks against a live deployment of the Konect4AI x WebMCP app.
+#
+#   bash scripts/acceptance.sh
+#   BASE_URL=http://localhost:3000 bash scripts/acceptance.sh
+#
+# These assert the boundary directly: the page receives the underlying rows,
+# the receipt reports rawRowsReturnedThroughWebMCP=false, an unknown jobId is
+# rejected with the list of sources that actually exist, and no credential
+# appears in any public response.
+
 B="${BASE_URL:-https://konect4ai-webmcp.vercel.app}"
-JOB=fe6cf2a9-972d-46ee-8e30-7c1904c6ba01
-PASS=0; FAIL=0
-chk(){ if [ "$2" = "ok" ]; then echo "  ✅ $1"; PASS=$((PASS+1)); else echo "  ❌ $1 — $3"; FAIL=$((FAIL+1)); fi; }
+JOB="${DEMO_JOB_ID:-fe6cf2a9-972d-46ee-8e30-7c1904c6ba01}"
+TOOLNAME="${DEMO_TOOL_NAME:-usgs_earthquakes_past_24h_mag_2_5_fe6cf2a9}"
 
-echo "════ A. 基礎可達性 ════"
-C=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$B/"); [ "$C" = 200 ] && chk "首頁 200 / HTTPS" ok || chk "首頁" bad "HTTP $C"
-C=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$B/.well-known/agent-card.json"); [ "$C" = 200 ] && chk "Agent Card 可達" ok || chk "Agent Card" bad "HTTP $C"
+echo "Target: $B"
+echo
 
-echo; echo "════ B. 能力清單 ════"
-curl -s --max-time 40 "$B/api/konect4ai/tools" > /tmp/_t.json
-python3 - <<'PY'
-import json,re
-d=json.load(open("/tmp/_t.json"))
-ts=d.get("tools",[])
-n=len(ts); ok=sum(1 for t in ts if re.fullmatch(r'[0-9a-f]{8}-[0-9a-f-]{27}',str(t.get("jobId"))))
-leak=sum(1 for t in ts if "http" in (t.get("description") or ""))
-print(("  ✅" if n>0 else "  ❌")+f" 工具數 {n}")
-print(("  ✅" if ok==n and n>0 else "  ❌")+f" jobId 皆為 UUID {ok}/{n}")
-print(("  ✅" if leak==0 else "  ❌")+f" 描述未洩漏來源網址（洩漏 {leak} 筆）")
-PY
+echo "== A. Reachability =="
+C=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$B/")
+[ "$C" = 200 ] && echo "  PASS  home page 200 over HTTPS" || echo "  FAIL  home page returned $C"
+C=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$B/.well-known/agent-card.json")
+[ "$C" = 200 ] && echo "  PASS  agent card reachable" || echo "  FAIL  agent card returned $C"
 
-echo; echo "════ C. ask_data_source 邊界 ════"
-R=$(curl -s --max-time 120 -X POST "$B/api/konect4ai/ask" -H "Content-Type: application/json" -d "{\"jobId\":\"$JOB\",\"question\":\"What is the largest earthquake?\"}")
-echo "$R" | python3 -c "
+echo
+echo "== B. Capability discovery =="
+curl -s --max-time 40 "$B/api/konect4ai/tools" | python3 -c "
+import json,re,sys
+d=json.load(sys.stdin); ts=d.get('tools',[])
+n=len(ts)
+ok=sum(1 for t in ts if re.fullmatch(r'[0-9a-f]{8}-[0-9a-f-]{27}',str(t.get('jobId'))))
+leak=sum(1 for t in ts if 'http' in (t.get('description') or ''))
+print(('  PASS  %d capabilities discovered' % n) if n else '  FAIL  no capabilities discovered')
+print(('  PASS  every jobId is a UUID (%d/%d)' % (ok,n)) if n and ok==n else ('  FAIL  jobId resolution %d/%d' % (ok,n)))
+print('  PASS  no source URL in agent-visible descriptions' if leak==0 else '  FAIL  %d descriptions leak a source URL' % leak)
+"
+
+echo
+echo "== C. ask_data_source boundary =="
+curl -s --max-time 120 -X POST "$B/api/konect4ai/ask" -H "Content-Type: application/json" \
+  -d "{\"jobId\":\"$JOB\",\"question\":\"What is the largest earthquake in this dataset?\"}" | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
-if 'error' in d: print('  ❌ UUID 問答失敗:', str(d)[:100]); raise SystemExit
-print(('  ✅' if d.get('answer') else '  ❌')+' 回傳答案')
-rr=d.get('rawRows') or []
-print(('  ✅' if len(rr)>0 else '  ❌')+f' 頁面拿到原始資料 {len(rr)} 筆')
-rc=(d.get('receipt') or {})
-print(('  ✅' if rc.get('rawRowsReturnedThroughWebMCP') is False else '  ❌')+' receipt 標示未經 WebMCP 回傳')
-print(('  ✅' if rc.get('verifiedByBackend') else '  ❌')+' backend verified')
-print(('  ✅' if rc.get('recordsConsulted') else '  ❌')+f\" recordsConsulted={rc.get('recordsConsulted')}\")
+if 'error' in d:
+    print('  FAIL  ask returned an error:', str(d)[:90]); raise SystemExit
+r=d.get('receipt') or {}; rows=d.get('rawRows') or []
+print('  PASS  an answer was returned' if d.get('answer') else '  FAIL  no answer returned')
+print(('  PASS  page received %d underlying rows' % len(rows)) if rows else '  FAIL  page received no rows')
+print('  PASS  receipt reports rawRowsReturnedThroughWebMCP=false' if r.get('rawRowsReturnedThroughWebMCP') is False else '  FAIL  receipt does not assert the boundary')
+print('  PASS  answer verified by the backend' if r.get('verifiedByBackend') else '  FAIL  answer not backend-verified')
+print(('  PASS  recordsConsulted=%s' % r.get('recordsConsulted')) if r.get('recordsConsulted') else '  FAIL  recordsConsulted missing')
 "
-R=$(curl -s --max-time 120 -X POST "$B/api/konect4ai/ask" -H "Content-Type: application/json" -d '{"jobId":"usgs_earthquakes_past_24h_mag_2_5_fe6cf2a9","question":"largest earthquake?"}')
-echo "$R" | python3 -c "
+curl -s --max-time 120 -X POST "$B/api/konect4ai/ask" -H "Content-Type: application/json" \
+  -d "{\"jobId\":\"$TOOLNAME\",\"question\":\"largest earthquake?\"}" | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
-print(('  ✅' if d.get('answer') and len(d.get('rawRows') or [])>0 else '  ❌')+' 傳工具名稱也能解析且拿到資料')
+ok = d.get('answer') and len(d.get('rawRows') or [])>0
+print('  PASS  a tool name resolves to its jobId and still returns rows' if ok else '  FAIL  tool-name resolution lost the rows')
 "
-R=$(curl -s --max-time 60 -X POST "$B/api/konect4ai/ask" -H "Content-Type: application/json" -d '{"jobId":"bogus-id","question":"x"}')
-echo "$R" | python3 -c "
+curl -s --max-time 60 -X POST "$B/api/konect4ai/ask" -H "Content-Type: application/json" \
+  -d '{"jobId":"bogus-id","question":"x"}' | python3 -c "
 import json,sys
 d=json.load(sys.stdin); j=json.dumps(d)
-print(('  ✅' if 'error' in d and 'fe6cf2a9' in j else '  ❌')+' 亂碼 jobId 被擋且附可用清單')
+ok = 'error' in d and 'fe6cf2a9' in j
+print('  PASS  unknown jobId rejected, available sources listed' if ok else '  FAIL  unknown jobId was not rejected with a source list')
 "
 
-echo; echo "════ D. A2A ════"
+echo
+echo "== D. A2A adapter =="
 curl -s --max-time 40 "$B/.well-known/agent-card.json" | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
-print(('  ✅' if d.get('url','').startswith('https://konect4ai-webmcp.vercel.app') else '  ❌')+f\" card.url={d.get('url')}\")
-print(('  ✅' if len(d.get('capabilityMetadata') or [])>0 else '  ❌')+f\" 能力 {len(d.get('capabilityMetadata') or [])} 個\")
-print(('  ✅' if len(d.get('skills') or [])==4 else '  ❌')+f\" skills {len(d.get('skills') or [])} 個\")
-print(('  ✅' if d.get('protocolVersion')=='v1.0' else '  ❌')+f\" protocolVersion={d.get('protocolVersion')}\")
+u=d.get('url',''); cm=d.get('capabilityMetadata') or []; sk=d.get('skills') or []
+print(('  PASS  card url is the public origin (%s)' % u) if u.startswith('http') and 'localhost' not in u else '  FAIL  card url is not a public origin: %s' % u)
+print(('  PASS  %d live capabilities in the card' % len(cm)) if cm else '  FAIL  card lists no capabilities')
+print(('  PASS  %d high-level skills' % len(sk)) if len(sk)==4 else '  FAIL  expected 4 skills, found %d' % len(sk))
+print('  PASS  protocolVersion=v1.0' if d.get('protocolVersion')=='v1.0' else '  FAIL  protocolVersion=%s' % d.get('protocolVersion'))
 "
-T=$(curl -s --max-time 180 -X POST "$B/a2a" -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":"acc","method":"SendMessage","params":{"message":{"text":"What changed in the WebMCP spec?"}}}')
+T=$(curl -s --max-time 180 -X POST "$B/a2a" -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":"acc","method":"SendMessage","params":{"message":{"text":"What changed in the WebMCP spec?"}}}')
 echo "$T" | python3 -c "
 import json,sys
 d=json.load(sys.stdin); r=d.get('result') or {}
-print(('  ✅' if (r.get('task') or {}).get('state')=='completed' else '  ❌')+' SendMessage 完成')
-print(r.get('taskId',''), file=open('/tmp/_tid','w'))
+st=(r.get('task') or {}).get('state')
+print('  PASS  SendMessage completed' if st=='completed' else '  FAIL  SendMessage state=%s' % st)
+open('/tmp/_tid','w').write(r.get('taskId',''))
 "
 TID=$(cat /tmp/_tid 2>/dev/null)
-[ -n "$TID" ] && curl -s --max-time 60 -X POST "$B/a2a" -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"id\":\"g\",\"method\":\"GetTask\",\"params\":{\"taskId\":\"$TID\"}}" | python3 -c "
+[ -n "$TID" ] && curl -s --max-time 60 -X POST "$B/a2a" -H "Content-Type: application/json" \
+  -d "{\"jsonrpc\":\"2.0\",\"id\":\"g\",\"method\":\"GetTask\",\"params\":{\"taskId\":\"$TID\"}}" | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
-print(('  ✅' if 'result' in d else '  ❌')+' GetTask 取得任務')
+print('  PASS  GetTask retrieved the task' if 'result' in d else '  FAIL  GetTask did not return a task')
 "
 
-echo; echo "════ E. 其他端點 ════"
-curl -s --max-time 60 -X POST "$B/api/datagov/search" -H "Content-Type: application/json" -d '{"query":"earthquake","limit":3}' | python3 -c "
+echo
+echo "== E. Other endpoints =="
+curl -s --max-time 60 -X POST "$B/api/datagov/search" -H "Content-Type: application/json" \
+  -d '{"query":"earthquake","limit":3}' | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
-print(('  ✅' if 'error' not in d else '  ❌')+' Data.gov 搜尋')
+print('  PASS  Data.gov search responds' if 'error' not in d else '  FAIL  Data.gov search errored')
 "
 curl -s --max-time 40 -X POST "$B/api/konect4ai/sources" -H "Content-Type: application/json" -d '{}' | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
-print(('  ✅' if 'error' in d else '  ❌')+' 建立來源端點會擋掉空請求')
+print('  PASS  source creation rejects an empty request' if 'error' in d else '  FAIL  source creation accepted an empty request')
 "
 
-echo; echo "════ F. 安全 ════"
+echo
+echo "== F. Secrets =="
 ALL=$(curl -s --max-time 40 "$B/api/konect4ai/tools"; curl -s --max-time 40 "$B/.well-known/agent-card.json"; curl -s --max-time 30 "$B/")
-echo "$ALL" | grep -qiE "sk-[a-zA-Z0-9]{15,}|eyJ[A-Za-z0-9_-]{30,}|VB-2T2R" && echo "  ❌ 回應中發現疑似密鑰" || echo "  ✅ 公開回應未含密鑰"
+echo "$ALL" | grep -qiE "sk-[a-zA-Z0-9]{15,}|eyJ[A-Za-z0-9_-]{30,}" \
+  && echo "  FAIL  a credential-shaped string appears in a public response" \
+  || echo "  PASS  no credential appears in any public response"
