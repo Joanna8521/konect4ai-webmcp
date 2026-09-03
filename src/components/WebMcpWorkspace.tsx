@@ -631,12 +631,19 @@ export default function WebMcpWorkspace() {
 
   const cleanupRef = useRef<(() => void) | null>(null);
   const registrationControllerRef = useRef<AbortController | null>(null);
+  const [mounted, setMounted] = useState(false);
   const agentDefinitions = useMemo(() => getAgentDefinitions(), []);
   const agentTools = useMemo(() => getAgentWebMcpTools(), []);
-  const copy = useMemo(() => getWorkspaceCopy(uiLanguage), [uiLanguage]);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const copy = useMemo(
+    () => (mounted ? getWorkspaceCopy(uiLanguage) : getWorkspaceCopy("en")),
+    [uiLanguage, mounted],
+  );
   const resolvedUiLanguage = useMemo(
-    () => resolveWorkspaceLanguage(uiLanguage),
-    [uiLanguage],
+    () => (mounted ? resolveWorkspaceLanguage(uiLanguage) : "en"),
+    [uiLanguage, mounted],
   );
   const displayLocale = resolvedUiLanguage === "zh-TW" ? "zh-TW" : "en-US";
 
