@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/postbuild-vinext.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "check:workspace-copy": "node scripts/check-workspace-copy.mjs"
