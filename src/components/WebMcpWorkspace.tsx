@@ -904,7 +904,7 @@ export default function WebMcpWorkspace() {
 
           setProposals((items) => [proposal, ...items]);
 
-          const resultMessage = `${copy.proposalSubmittedLabel} ${copy.awaitingOwnerApprovalLabel}`;
+          const resultMessage = copy.proposalSubmittedLabel;
           patchInvocationRecord(baseRecord.id, {
             status: "waiting",
             phase: "waiting",

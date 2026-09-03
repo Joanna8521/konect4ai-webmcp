@@ -211,7 +211,8 @@ const EN: WorkspaceCopy = {
   sensitiveActionsLabel: "sensitive-actions",
   alwaysLabel: "always",
   waitingForBackendLabel: "Waiting for Konect4AI backend...",
-  proposalSubmittedLabel: "Proposal submitted.",
+  proposalSubmittedLabel:
+    "Proposal submitted. Waiting for the page owner to approve.",
   awaitingOwnerApprovalLabel: "Waiting for the page owner to approve.",
   approvedCreatingSourceLabel: "Approved. Creating source...",
   sourceCreatedAfterHumanApprovalLabel: "Created after human approval",
@@ -361,7 +362,7 @@ const ZH: WorkspaceCopy = {
   sensitiveActionsLabel: "敏感動作",
   alwaysLabel: "永遠",
   waitingForBackendLabel: "等待 Konect4AI 後端...",
-  proposalSubmittedLabel: "提案已送出。",
+  proposalSubmittedLabel: "提案已送出。等待頁面擁有者核准。",
   awaitingOwnerApprovalLabel: "等待頁面擁有者核准。",
   approvedCreatingSourceLabel: "已核准。正在建立來源...",
   sourceCreatedAfterHumanApprovalLabel: "經人類核准後建立",
