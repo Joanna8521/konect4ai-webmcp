@@ -1525,7 +1525,10 @@ export default function WebMcpWorkspace() {
         result.cleanup();
       }
       setWebMcpState(result.available ? "available" : "unavailable");
-      setRegistrationErrors(result.errors);
+      // A browser without WebMCP is a supported state, not a failure — the
+      // status row already says so. Only carry errors from a registration that
+      // actually had a registry to write to.
+      setRegistrationErrors(result.available ? result.errors : []);
     });
 
     return () => {
