@@ -203,11 +203,10 @@ export function getAgentToolName(agentId: string): string {
 }
 
 export function getAgentWebMcpTools(): BackendTool[] {
-  return AGENT_DEFINITIONS.map((agent) => ({
+  return AGENT_DEFINITIONS.filter((agent) => agent.id !== "browser_agent").map((agent) => ({
     name: getAgentToolName(agent.id),
     description: agent.description,
     inputSchema: agent.inputSchema,
     label: agent.name,
   }));
 }
-

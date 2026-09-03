@@ -1,6 +1,28 @@
 import type { BackendTool, JsonObject } from "@/lib/konect4ai-client";
+import {
+  ASK_DATA_SOURCE_TOOL_NAME,
+  PROPOSE_DATA_SOURCE_TOOL_NAME,
+} from "@/lib/konect4ai-client";
 
-type ToolExecute = (args?: JsonObject) => Promise<unknown> | unknown;
+type ToolExecuteOptions = {
+  signal?: AbortSignal;
+};
+
+interface ToolContentBlock {
+  type: "text";
+  text: string;
+}
+
+interface CallToolResult {
+  content: ToolContentBlock[];
+  structuredContent?: unknown;
+  isError?: boolean;
+}
+
+type ToolExecute = (
+  args?: JsonObject,
+  options?: ToolExecuteOptions,
+) => Promise<CallToolResult> | CallToolResult;
 
 interface ModelContextTool {
   name: string;
@@ -42,6 +64,10 @@ declare global {
   interface Document {
     modelContext?: ModelContext;
   }
+
+  interface Navigator {
+    modelContext?: ModelContext;
+  }
 }
 
 export interface RegistrationResult {
@@ -51,11 +77,24 @@ export interface RegistrationResult {
   cleanup: () => void;
 }
 
+export interface RegistrationOptions {
+  controller?: AbortController;
+}
+
 export type ExecuteRegisteredTool = (
   toolName: string,
   args: JsonObject,
   source: "webmcp",
+  signal?: AbortSignal,
 ) => Promise<unknown>;
+
+function getModelContext(): ModelContext | undefined {
+  if (typeof document === "undefined" || typeof navigator === "undefined") {
+    return undefined;
+  }
+
+  return document.modelContext ?? navigator.modelContext;
+}
 
 function cloneSchema(schema: unknown): JsonObject | undefined {
   if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
@@ -76,15 +115,54 @@ function normalizeArgs(args: unknown): JsonObject {
   return args as JsonObject;
 }
 
+function wrapToolResult(rawResult: unknown): CallToolResult {
+  const text = JSON.stringify(rawResult, null, 2);
+  const content: ToolContentBlock[] = [
+    {
+      type: "text",
+      text: text ?? String(rawResult ?? null),
+    },
+  ];
+  return {
+    content,
+    structuredContent: rawResult,
+  };
+}
+
+function wrapTextResult(
+  text: string,
+  structuredContent?: unknown,
+): CallToolResult {
+  return {
+    content: [{ type: "text", text }],
+    structuredContent,
+  };
+}
+
+function wrapToolError(message: string): CallToolResult {
+  const content: ToolContentBlock[] = [{ type: "text", text: message }];
+  return {
+    content,
+    structuredContent: {
+      isError: true,
+      message,
+    },
+    isError: true,
+  };
+}
+
 export function isWebMcpAvailable(): boolean {
-  return typeof document !== "undefined" && Boolean(document.modelContext);
+  return Boolean(getModelContext());
 }
 
 export async function registerKonect4aiTools(
   tools: BackendTool[],
   executeTool: ExecuteRegisteredTool,
+  options: RegistrationOptions = {},
 ): Promise<RegistrationResult> {
-  if (typeof document === "undefined" || !document.modelContext) {
+  const modelContext = getModelContext();
+
+  if (!modelContext) {
     return {
       available: false,
       registered: [],
@@ -93,19 +171,57 @@ export async function registerKonect4aiTools(
     };
   }
 
-  const controller = new AbortController();
+  const controller = options.controller ?? new AbortController();
   const registered: string[] = [];
   const errors: string[] = [];
 
   for (const tool of tools) {
+    if (controller.signal.aborted) {
+      break;
+    }
     try {
-      await document.modelContext.registerTool(
+      await modelContext.registerTool(
         {
           name: tool.name,
           description: tool.description || `Run ${tool.name}.`,
           inputSchema: cloneSchema(tool.inputSchema),
-          execute: async (args?: JsonObject) => {
-            return executeTool(tool.name, normalizeArgs(args), "webmcp");
+          execute: async (args?: JsonObject, options?: ToolExecuteOptions) => {
+            try {
+              const rawResult = await executeTool(
+                tool.name,
+                normalizeArgs(args),
+                "webmcp",
+                options?.signal,
+              );
+              if (tool.name === ASK_DATA_SOURCE_TOOL_NAME) {
+                const value =
+                  rawResult && typeof rawResult === "object"
+                    ? (rawResult as Record<string, unknown>)
+                    : {};
+                const answer =
+                  typeof value.answer === "string"
+                    ? value.answer
+                    : typeof rawResult === "string"
+                      ? rawResult
+                      : "";
+                return wrapTextResult(answer, rawResult);
+              }
+              if (tool.name === PROPOSE_DATA_SOURCE_TOOL_NAME) {
+                const value =
+                  rawResult && typeof rawResult === "object"
+                    ? (rawResult as Record<string, unknown>)
+                    : {};
+                const message =
+                  typeof value.message === "string"
+                    ? value.message
+                    : "提案已送出，等待頁面擁有者核准";
+                return wrapTextResult(message, { message });
+              }
+              return wrapToolResult(rawResult);
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error);
+              return wrapToolError(message);
+            }
           },
         },
         { signal: controller.signal },

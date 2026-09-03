@@ -1,13 +1,17 @@
 # Konect4AI x WebMCP
 
-Turn web data into agent-native tools.
+Provenance first.
 
-Konect4AI already turns websites and data sources into structured AI capabilities that can be consumed through REST, backend MCP, CLI, RSS, and SDKs. This WebMCP Challenge project adds an in-browser bridge that exposes those existing backend MCP tools as native WebMCP tools on the running page.
+Agents can guess at live websites. This page gives them verified structured extraction, a visible return boundary, and a receipt the human can audit while the browser stays in view.
 
-This project has two capability sources:
+Konect4AI already turns websites and data sources into structured AI capabilities that can be consumed through REST, backend MCP, CLI, RSS, and SDKs. This WebMCP Challenge project keeps that backend logic intact and presents it inside a browser workspace where the human can see each invocation as it happens.
+
+This challenge app now exposes several capability surfaces:
 
 - Existing dynamic Konect4AI MCP tools translated into native WebMCP tools.
+- A native `ask_data_source` bridge for job-scoped BYOK Q&A.
 - One hackathon demo tool implemented in this challenge app: `search_us_government_datasets`.
+- A human-approved source proposal flow that becomes a backend job only after the page owner approves it.
 - Five native Agent Registry tools implemented in this challenge app.
 
 ## Why WebMCP?
@@ -26,9 +30,9 @@ Human <-> browser page <-> agent
            Konect4AI backend
 ```
 
-That matters because the user can see what the agent is doing. When an agent invokes a WebMCP tool, this page immediately shows the tool name, arguments, running state, timestamps, returned result, and invocation history. The browser page becomes shared working context instead of being bypassed by a backend-only integration.
+That matters because the user can see what the agent is doing. When an agent invokes a WebMCP tool, this page immediately shows the tool name, arguments, running state, timestamps, return boundary, provenance receipt, and invocation history. The browser page becomes shared working context instead of being bypassed by a backend-only integration.
 
-WebMCP also avoids brittle UI automation. The agent discovers structured tools and schemas directly from the page, while the page reuses Konect4AI's existing execution logic rather than duplicating extraction code.
+WebMCP also avoids brittle UI automation. The agent discovers structured tools and schemas directly from the page, while the page reuses Konect4AI's existing execution logic rather than duplicating extraction code. The important boundary is what the WebMCP tool returns, not browser-level isolation.
 
 ## Architecture
 
@@ -75,10 +79,11 @@ The Data.gov demo capability follows the same WebMCP lifecycle, but it is implem
 This challenge app adds one shared Agent Registry runtime on top of the existing capability bridge. The built-in agents are profile-like configurations rather than separate agent systems:
 
 - `Research Agent` - research a topic across multiple available source capabilities and synthesize a structured result.
-- `Browser Agent` - represent a browser-oriented task and return a clear unavailable result when browser execution is not connected.
 - `Monitor Agent` - run one bounded freshness/update check across available source capabilities.
 - `Data Analyst Agent` - analyze structured output from one selected capability.
 - `Custom Agent` - run a bounded custom task using only tools that exist in the current registry.
+
+`Browser Agent` still exists in the runtime as an unavailable capability, but it is hidden from the default picker because this challenge app does not connect a browser automation backend.
 
 These agents are exposed as real WebMCP tools:
 
@@ -89,6 +94,51 @@ These agents are exposed as real WebMCP tools:
 - `run_custom_agent`
 
 The WebMCP page also keeps the raw Konect4AI source capabilities visible separately so ChatGPT can either invoke a source tool directly or delegate to an agent.
+
+## A2A Adapter
+
+This repository also exposes a small A2A adapter for the `Konect4AI Research Agent`.
+
+It targets **A2A latest / v1.0** and intentionally implements only a narrow subset:
+
+> Implements a minimal A2A Protocol v1.0 JSON-RPC adapter subset:
+> Agent Card discovery, SendMessage, and GetTask.
+
+- `GET /.well-known/agent-card.json`
+- `POST /a2a` with `SendMessage`
+- `POST /a2a` with `GetTask`
+
+It does **not** implement `SendStreamingMessage`, `ListTasks`, `CancelTask`, `SubscribeToTask`, push notifications, or `GetExtendedAgentCard`.
+
+The Agent Card is generated dynamically from:
+
+- high-level capability skills for the Research Agent experience
+- the current Konect4AI MCP capability list from `GET /api/konect4ai/tools` as descriptive metadata only
+
+`SendMessage` runs the existing `research_agent` runtime directly. No separate agent platform, router, or planning engine is added here.
+
+Quick manual checks:
+
+```bash
+curl http://localhost:3001/.well-known/agent-card.json
+```
+
+```bash
+curl -X POST http://localhost:3001/a2a \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "demo-1",
+    "method": "SendMessage",
+    "params": {
+      "message": {
+        "text": "Compare the latest AI-related signals across the available sources."
+      }
+    }
+  }'
+```
+
+The second command returns a structured JSON-RPC result containing the task and the Research Agent runtime output.
 
 ## Data.gov WebMCP Demo
 
@@ -113,6 +163,24 @@ This is intentionally separate from the dynamic Konect4AI bridge:
 - Dynamic bridge: existing Konect4AI backend MCP `tools/list` becomes browser-native WebMCP registrations.
 - Data.gov demo: one public hackathon capability implemented in this challenge app, using the same visible invocation lifecycle.
 
+## Ask Data Source Boundary
+
+`ask_data_source` asks the page owner's configured BYOK model about a connected Konect4AI job and returns only the computed answer through WebMCP.
+
+The browser page may still show metadata or rows alongside that answer, but that is the page's own visible workspace. It is not browser-level isolation. The right-hand panel labels this explicitly as `NOT RETURNED THROUGH WEBMCP` so the boundary is auditable instead of implied.
+
+If the backend response does not carry source metadata, the UI renders `unverified` rather than pretending the value was verified.
+
+## Source Proposal Flow
+
+`propose_data_source` only creates a human-review card. It does not trigger backend work.
+
+After the page owner approves a proposal, the challenge app sends the request to Konect4AI server-side, polls job status until the source is ready, and then refreshes the existing `GET /api/konect4ai/tools` registry. That registry remains the single source of truth for WebMCP registration.
+
+`/generated/{jobId}/openapi.json` is only a validation or fallback path. It is not the primary registration source.
+
+The creation cap is a best-effort in-process limit on the challenge app server. On serverless deployments, it is per instance rather than global.
+
 ## Environment Variables
 
 Create `.env.local` with:
@@ -121,13 +189,19 @@ Create `.env.local` with:
 KONECT4AI_API_BASE=https://api.konect4ai.com
 KONECT4AI_DEMO_LICENSE_KEY=your-demo-license-key
 DATAGOV_API_KEY=your-datagov-key
+KONECT4AI_USER_TOKEN=your-user-jwt-if-you-enable-source-proposal-flows
 ```
+
+`KONECT4AI_USER_TOKEN` stays server-side and is used only for source proposal and BYOK ask proxying when configured.
 
 The license key is read only by Next.js server routes. It is never sent to the browser. The client calls only:
 
 ```text
 GET  /api/konect4ai/tools
 POST /api/konect4ai/call
+POST /api/konect4ai/ask
+POST /api/konect4ai/sources
+GET  /api/konect4ai/sources
 POST /api/datagov/search
 ```
 
@@ -169,18 +243,23 @@ Manual checks:
 
 - Do not commit `.env` or `.env.local`.
 - The demo license key stays server-side.
+- The source proposal token stays server-side.
 - The Data.gov API key stays server-side and is required for the demo search route.
+- The source creation cap is a best-effort in-process limit, not a global quota system.
 - The public repository contains only the WebMCP bridge and UI.
 - Konect4AI extraction, validation, quota, auth, and execution remain in the existing backend.
 - Tool output may contain untrusted source content. The UI displays it as data.
 
 ## Existing Konect4AI Q&A Status
 
-Konect4AI already has an existing job-scoped BYOK Q&A path in the private product. This challenge app does not reimplement that backend. The WebMCP workspace is prepared to coexist with that system, but the public hackathon demo intentionally focuses on:
+Konect4AI already has an existing job-scoped BYOK Q&A path in the private product. This challenge app does not reimplement that backend. Instead, it adds a thin server-side proxy at `/api/konect4ai/ask` so the browser page can surface the answer boundary and provenance receipt without exposing the underlying dataset through WebMCP.
+
+The WebMCP workspace is prepared to coexist with that system, but the public hackathon demo intentionally focuses on:
 
 1. Dynamic Konect4AI MCP -> WebMCP translation
-2. Native Data.gov WebMCP demo capability
-3. The new Agent Registry runtime in this challenge app
+2. Native ask_data_source boundary bridge
+3. Native Data.gov WebMCP demo capability
+4. The new Agent Registry runtime in this challenge app
 
 The private Konect4AI Q&A / scraper-control backend remains separate.
 

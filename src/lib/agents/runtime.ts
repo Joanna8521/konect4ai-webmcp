@@ -60,7 +60,7 @@ export interface AgentRuntimeContext {
     signal?: AbortSignal,
   ) => Promise<unknown>;
   signal?: AbortSignal;
-  invocationSource: "manual" | "webmcp";
+  invocationSource: "manual" | "webmcp" | "human";
   onProgress?: (event: AgentProgressEvent) => void;
 }
 
