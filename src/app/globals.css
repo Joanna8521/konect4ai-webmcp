@@ -158,6 +158,11 @@ h3 {
   box-shadow: 0 0 0 4px rgba(255, 112, 112, 0.12);
 }
 
+.status-pill.warning .status-dot {
+  background: var(--kept);
+  box-shadow: 0 0 0 4px rgba(224, 163, 60, 0.14);
+}
+
 .workspace-grid {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);

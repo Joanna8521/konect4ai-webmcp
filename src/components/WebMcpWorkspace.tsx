@@ -1763,7 +1763,15 @@ export default function WebMcpWorkspace() {
                   ? copy.connectedLabel
                   : copy.errorLabel || "error"}
             </span>
-            <span className="status-pill">
+            <span
+              className={`status-pill ${
+                registeredCount > 0
+                  ? "ok"
+                  : webMcpState === "available"
+                    ? "warning"
+                    : ""
+              }`}
+            >
               <span className="status-dot" />
               {registeredCount} {copy.agentToolsRegisteredLabel}
             </span>
