@@ -12,6 +12,7 @@ import type {
   DataAnalystAgentInput,
 } from "@/lib/agents/types";
 import { getAgentDefinition, isAgentToolName } from "@/lib/agents/registry";
+import { runViaWebMcp, type ConfirmRequest } from "@/lib/webmcp/agent-bridge";
 
 type AgentPhase = "planning" | "running" | "waiting" | "success" | "error";
 
@@ -62,6 +63,8 @@ export interface AgentRuntimeContext {
   signal?: AbortSignal;
   invocationSource: "manual" | "webmcp" | "human";
   onProgress?: (event: AgentProgressEvent) => void;
+  // Asks the human before the browser agent runs a page tool that is not read-only.
+  confirmAction?: (request: ConfirmRequest) => Promise<boolean>;
 }
 
 function nowStamp(): string {
@@ -356,6 +359,40 @@ export async function runAgent(
   const baseInput = toObject(input);
 
   if (definition.id === "browser_agent") {
+    // Prefer the page's own WebMCP tools; null means fall back to the path below.
+    const viaWebMcp = await runViaWebMcp({
+      goal,
+      input: baseInput,
+      signal: context.signal,
+      confirmAction: context.confirmAction,
+      exclude: isAgentToolName,
+      onProgress: (event) => emit(context, event),
+    });
+    if (viaWebMcp) {
+      const step = createStep(viaWebMcp.step.toolName, viaWebMcp.step.status);
+      step.completedAt = nowStamp();
+      step.arguments = viaWebMcp.step.arguments;
+      step.result = viaWebMcp.step.result;
+      step.error = viaWebMcp.step.error;
+      steps.push(step);
+      return {
+        agentId: definition.id,
+        agentName: definition.name,
+        status: viaWebMcp.status,
+        message: viaWebMcp.message,
+        goal,
+        language,
+        sourcePolicy: definition.sourcePolicy,
+        approvalMode: definition.approvalMode,
+        requestedSources,
+        usedCapabilities: viaWebMcp.usedCapabilities,
+        steps,
+        summary: viaWebMcp.message,
+        result: viaWebMcp.result,
+        details: viaWebMcp.details,
+      };
+    }
+
     const step = createStep("browser_backend", "skipped");
     step.completedAt = nowStamp();
     step.error = "No browser execution backend is available in this challenge app.";

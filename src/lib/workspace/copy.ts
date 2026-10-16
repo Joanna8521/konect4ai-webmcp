@@ -87,6 +87,7 @@ export interface WorkspaceCopy {
   waitingForBackendLabel: string;
   proposalSubmittedLabel: string;
   awaitingOwnerApprovalLabel: string;
+  confirmPageToolLabel: string;
   approvedCreatingSourceLabel: string;
   sourceCreatedAfterHumanApprovalLabel: string;
   proposalRejectedNoBackendLabel: string;
@@ -217,6 +218,8 @@ const EN: WorkspaceCopy = {
   proposalSubmittedLabel:
     "Proposal submitted. Waiting for the page owner to approve.",
   awaitingOwnerApprovalLabel: "Waiting for the page owner to approve.",
+  confirmPageToolLabel:
+    "The browser agent wants to run a page tool that may change data. Allow it?",
   approvedCreatingSourceLabel: "Approved. Creating source...",
   sourceCreatedAfterHumanApprovalLabel: "Created after human approval",
   proposalRejectedNoBackendLabel: "Rejected. No backend action occurred.",
@@ -369,6 +372,7 @@ const ZH: WorkspaceCopy = {
   waitingForBackendLabel: "等待 Konect4AI 後端...",
   proposalSubmittedLabel: "提案已送出。等待頁面擁有者核准。",
   awaitingOwnerApprovalLabel: "等待頁面擁有者核准。",
+  confirmPageToolLabel: "瀏覽器 Agent 想執行一個可能會改資料的頁面工具，要允許嗎？",
   approvedCreatingSourceLabel: "已核准。正在建立來源...",
   sourceCreatedAfterHumanApprovalLabel: "經人類核准後建立",
   proposalRejectedNoBackendLabel: "已拒絕。沒有任何後端動作發生。",

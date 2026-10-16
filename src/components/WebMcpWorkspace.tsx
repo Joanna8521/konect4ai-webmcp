@@ -951,6 +951,10 @@ export default function WebMcpWorkspace() {
             executeCapability,
             invocationSource: source,
             signal,
+            confirmAction: async (request) =>
+              window.confirm(
+                `${copy.confirmPageToolLabel}\n\n${request.toolName}\n${JSON.stringify(request.arguments, null, 2)}`,
+              ),
             onProgress: (event) => {
               patchCurrentInvocation(baseRecord.id, {
                 phase: event.phase,
