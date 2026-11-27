@@ -245,8 +245,8 @@ POST /api/datagov/search
 ## Setup
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open:
@@ -260,9 +260,9 @@ Use a WebMCP-capable browser or ChatGPT Desktop to test browser-agent discovery.
 ## Testing
 
 ```bash
-npm run typecheck
-npm run build
-npm run check:workspace-copy
+pnpm typecheck
+pnpm build
+pnpm check:workspace-copy
 ```
 
 ### Acceptance script
