@@ -10,10 +10,11 @@
     "build": "next build && node scripts/postbuild-vinext.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check:workspace-copy": "node scripts/check-workspace-copy.mjs"
+    "check:workspace-copy": "node scripts/check-workspace-copy.mjs",
+    "audit:check": "node scripts/audit-check.mjs"
   },
   "dependencies": {
-    "next": "^15.0.0",
+    "next": "^15.5.29",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
